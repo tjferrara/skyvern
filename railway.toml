@@ -1,3 +1,6 @@
+# Railway configuration for Skyvern deployment
+# Updated to trigger new deployment
+
 [build]
 builder = "dockerfile"
 dockerfilePath = "Dockerfile.railway"
