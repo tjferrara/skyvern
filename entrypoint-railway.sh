@@ -60,4 +60,4 @@ STREAMING_PID=$!
 
 # Start the main Skyvern application
 echo "Starting Skyvern application on port $PORT..."
-exec python -m skyvern.forge --host 0.0.0.0 --port $PORT 
+exec python -m skyvern.forge 
