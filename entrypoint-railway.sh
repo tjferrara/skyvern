@@ -4,6 +4,29 @@ set -e
 
 echo "Starting Skyvern on Railway..."
 
+# Debug: Check Python path and module structure
+echo "=== Python Path Debug ==="
+echo "PYTHONPATH: $PYTHONPATH"
+echo "Current directory: $(pwd)"
+echo "Python sys.path:"
+python -c "import sys; print('\n'.join(sys.path))"
+echo "=== Client Module Structure ==="
+find /app/skyvern/client -name "*.py" | head -10
+echo "=== Testing imports ==="
+python -c "
+try:
+    import skyvern.client.artifacts
+    print('✓ skyvern.client.artifacts import successful')
+except Exception as e:
+    print(f'✗ skyvern.client.artifacts import failed: {e}')
+
+try:
+    from skyvern.client.artifacts.client import ArtifactsClient
+    print('✓ ArtifactsClient import successful')
+except Exception as e:
+    print(f'✗ ArtifactsClient import failed: {e}')
+"
+
 # Set default port if not provided by Railway
 export PORT=${PORT:-8000}
 
