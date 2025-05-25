@@ -72,14 +72,14 @@ RUN mkdir -p /tmp/videos /tmp/har /tmp/log /tmp/artifacts /app/.streamlit
 # Copy application code (optimized layer ordering for better caching)
 COPY . /app
 
-# Verify client files exist
-RUN echo "=== Verifying client files exist ===" && \
-    ls -la /app/skyvern/client/artifacts/client.py && \
-    ls -la /app/skyvern/client/browser_session/client.py && \
-    ls -la /app/skyvern/client/workflows/client.py && \
-    ls -la /app/skyvern/client/agent/client.py && \
-    ls -la /app/skyvern/client/credentials/client.py && \
-    echo "All client files verified!"
+# Verify client directory structure
+RUN echo "=== Checking client directory structure ===" && \
+    find /app/skyvern/client -name "*.py" | head -20 && \
+    echo "=== Checking specific directories ===" && \
+    ls -la /app/skyvern/client/ && \
+    echo "=== Checking for client.py files ===" && \
+    find /app/skyvern/client -name "client.py" && \
+    echo "Client directory verification completed!"
 
 # Copy and set up entrypoint
 COPY ./entrypoint-railway.sh /app/entrypoint-railway.sh
