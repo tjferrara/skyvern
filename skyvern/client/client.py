@@ -4,17 +4,21 @@ import typing
 from .environment import SkyvernEnvironment
 import httpx
 from .core.client_wrapper import SyncClientWrapper
-from .agent.client import AgentClient
-from .workflows.client import WorkflowsClient
-from .artifacts.client import ArtifactsClient
-from .browser_session.client import BrowserSessionClient
-from .credentials.client import CredentialsClient
+try:
+    from .agent.client import AgentClient, AsyncAgentClient
+    from .workflows.client import WorkflowsClient, AsyncWorkflowsClient
+    from .artifacts.client import ArtifactsClient, AsyncArtifactsClient
+    from .browser_session.client import BrowserSessionClient, AsyncBrowserSessionClient
+    from .credentials.client import CredentialsClient, AsyncCredentialsClient
+except ImportError as e:
+    # Fallback to absolute imports if relative imports fail
+    print(f"Relative import failed: {e}, trying absolute imports...")
+    from skyvern.client.agent.client import AgentClient, AsyncAgentClient
+    from skyvern.client.workflows.client import WorkflowsClient, AsyncWorkflowsClient
+    from skyvern.client.artifacts.client import ArtifactsClient, AsyncArtifactsClient
+    from skyvern.client.browser_session.client import BrowserSessionClient, AsyncBrowserSessionClient
+    from skyvern.client.credentials.client import CredentialsClient, AsyncCredentialsClient
 from .core.client_wrapper import AsyncClientWrapper
-from .agent.client import AsyncAgentClient
-from .workflows.client import AsyncWorkflowsClient
-from .artifacts.client import AsyncArtifactsClient
-from .browser_session.client import AsyncBrowserSessionClient
-from .credentials.client import AsyncCredentialsClient
 
 
 class Skyvern:
