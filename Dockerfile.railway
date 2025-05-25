@@ -23,7 +23,7 @@ ENV ARTIFACT_STORAGE_PATH=/tmp/artifacts
 
 WORKDIR /app
 
-# Install system dependencies
+# Install system dependencies (this layer will be cached)
 RUN apt-get update && apt-get install -y \
     curl \
     wget \
@@ -51,36 +51,40 @@ RUN apt-get update && apt-get install -y \
     fluxbox \
     && rm -rf /var/lib/apt/lists/*
 
-# Copy requirements and install Python dependencies
-COPY --from=requirements-stage /tmp/requirements.txt /app/requirements.txt
-RUN pip install --upgrade pip setuptools wheel
-RUN pip install --no-cache-dir --upgrade -r requirements.txt
-
-# Install Playwright browsers
-RUN playwright install-deps
-RUN playwright install chromium
-
-# Install Node.js for Bitwarden CLI
+# Install Node.js for Bitwarden CLI (this layer will be cached)
 ENV NODE_VERSION=20.12.2
 RUN curl -fsSL https://deb.nodesource.com/setup_20.x | bash - \
     && apt-get install -y nodejs \
     && npm install -g @bitwarden/cli@2024.9.0
 
-# Copy application code
-COPY . /app
+# Copy requirements and install Python dependencies (this layer will be cached unless requirements change)
+COPY --from=requirements-stage /tmp/requirements.txt /app/requirements.txt
+RUN pip install --upgrade pip setuptools wheel
+RUN pip install --no-cache-dir --upgrade -r requirements.txt
 
-# Debug: Check what files exist in the client directory and ensure directories exist
-RUN echo "=== Checking client directory structure ===" && \
-    find /app/skyvern/client -type f -name "*.py" | head -20 && \
-    echo "=== Checking if client subdirectories exist ===" && \
-    ls -la /app/skyvern/client/ && \
-    echo "=== Ensuring client subdirectories exist ===" && \
-    mkdir -p /app/skyvern/client/artifacts /app/skyvern/client/browser_session /app/skyvern/client/workflows /app/skyvern/client/agent /app/skyvern/client/credentials && \
-    echo "=== Checking specific client.py files ===" && \
-    ls -la /app/skyvern/client/artifacts/client.py /app/skyvern/client/browser_session/client.py /app/skyvern/client/workflows/client.py 2>/dev/null || echo "Some client.py files missing"
+# Install Playwright browsers (this layer will be cached)
+RUN playwright install-deps
+RUN playwright install chromium
 
-# Create necessary directories
+# Create necessary directories early (this layer will be cached)
 RUN mkdir -p /tmp/videos /tmp/har /tmp/log /tmp/artifacts /app/.streamlit
+
+# Copy only the client module structure first to test imports
+COPY ./skyvern/client /app/skyvern/client
+COPY ./skyvern/__init__.py /app/skyvern/__init__.py
+
+# Test client imports before copying the rest of the application
+RUN echo "=== Testing client imports ===" && \
+    cd /app && \
+    python -c "import skyvern.client.artifacts.client; print('✓ artifacts.client import successful')" && \
+    python -c "import skyvern.client.browser_session.client; print('✓ browser_session.client import successful')" && \
+    python -c "import skyvern.client.workflows.client; print('✓ workflows.client import successful')" && \
+    python -c "import skyvern.client.agent.client; print('✓ agent.client import successful')" && \
+    python -c "import skyvern.client.credentials.client; print('✓ credentials.client import successful')" && \
+    echo "All client imports successful!"
+
+# Copy the rest of the application code (this layer changes most frequently)
+COPY . /app
 
 # Copy and set up entrypoint
 COPY ./entrypoint-railway.sh /app/entrypoint-railway.sh
