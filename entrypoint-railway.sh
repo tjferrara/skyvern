@@ -31,9 +31,18 @@ except Exception as e:
 export PORT=${PORT:-8000}
 
 # Railway provides DATABASE_URL, but Skyvern expects DATABASE_STRING
+echo "=== Database Configuration Debug ==="
+echo "DATABASE_URL: ${DATABASE_URL:-'NOT SET'}"
+echo "DATABASE_STRING: ${DATABASE_STRING:-'NOT SET'}"
+
 if [ -n "$DATABASE_URL" ]; then
     export DATABASE_STRING="$DATABASE_URL"
+    echo "✓ DATABASE_STRING set from DATABASE_URL"
+else
+    echo "✗ DATABASE_URL not provided by Railway"
 fi
+
+echo "Final DATABASE_STRING: ${DATABASE_STRING:-'NOT SET'}"
 
 # Set default browser type for Railway (headless for better performance)
 export BROWSER_TYPE=${BROWSER_TYPE:-chromium-headless}
