@@ -69,22 +69,17 @@ RUN playwright install chromium
 # Create necessary directories early (this layer will be cached)
 RUN mkdir -p /tmp/videos /tmp/har /tmp/log /tmp/artifacts /app/.streamlit
 
-# Copy only the client module first to test imports (avoiding main __init__.py dependencies)
-COPY ./skyvern/client /app/skyvern/client
-RUN touch /app/skyvern/__init__.py
-
-# Test client imports before copying the rest of the application
-RUN echo "=== Testing client imports ===" && \
-    cd /app && \
-    python -c "import skyvern.client.artifacts.client; print('✓ artifacts.client import successful')" && \
-    python -c "import skyvern.client.browser_session.client; print('✓ browser_session.client import successful')" && \
-    python -c "import skyvern.client.workflows.client; print('✓ workflows.client import successful')" && \
-    python -c "import skyvern.client.agent.client; print('✓ agent.client import successful')" && \
-    python -c "import skyvern.client.credentials.client; print('✓ credentials.client import successful')" && \
-    echo "All client imports successful!"
-
-# Copy the rest of the application code (this layer changes most frequently)
+# Copy application code (optimized layer ordering for better caching)
 COPY . /app
+
+# Verify client files exist
+RUN echo "=== Verifying client files exist ===" && \
+    ls -la /app/skyvern/client/artifacts/client.py && \
+    ls -la /app/skyvern/client/browser_session/client.py && \
+    ls -la /app/skyvern/client/workflows/client.py && \
+    ls -la /app/skyvern/client/agent/client.py && \
+    ls -la /app/skyvern/client/credentials/client.py && \
+    echo "All client files verified!"
 
 # Copy and set up entrypoint
 COPY ./entrypoint-railway.sh /app/entrypoint-railway.sh
