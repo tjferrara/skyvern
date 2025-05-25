@@ -17,17 +17,26 @@ if config.config_file_name is not None:
 # for 'autogenerate' support
 # from myapp import mymodel
 # target_metadata = mymodel.Base.metadata
-from skyvern.forge.sdk.db import models
+# Import models directly to avoid triggering main skyvern.__init__.py
+import sys
+import os
+sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..'))
 
-target_metadata = models.Base.metadata
+try:
+    from skyvern.forge.sdk.db import models
+    target_metadata = models.Base.metadata
+except ImportError as e:
+    print(f"Warning: Could not import models: {e}")
+    target_metadata = None
 
-# other values from the config, defined by the needs of env.py,
-# can be acquired:
-# my_important_option = config.get_main_option("my_important_option")
-# ... etc.
-from skyvern.forge.sdk.settings_manager import SettingsManager
-
-config.set_main_option("sqlalchemy.url", SettingsManager.get_settings().DATABASE_STRING)
+# Set database URL from environment variable directly
+import os
+database_url = os.environ.get('DATABASE_STRING')
+if database_url:
+    config.set_main_option("sqlalchemy.url", database_url)
+    print(f"Using DATABASE_STRING from environment")
+else:
+    print("Warning: DATABASE_STRING not found in environment")
 
 
 def run_migrations_offline() -> None:
