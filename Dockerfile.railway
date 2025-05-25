@@ -69,9 +69,9 @@ RUN playwright install chromium
 # Create necessary directories early (this layer will be cached)
 RUN mkdir -p /tmp/videos /tmp/har /tmp/log /tmp/artifacts /app/.streamlit
 
-# Copy only the client module structure first to test imports
+# Copy only the client module first to test imports (avoiding main __init__.py dependencies)
 COPY ./skyvern/client /app/skyvern/client
-COPY ./skyvern/__init__.py /app/skyvern/__init__.py
+RUN touch /app/skyvern/__init__.py
 
 # Test client imports before copying the rest of the application
 RUN echo "=== Testing client imports ===" && \
