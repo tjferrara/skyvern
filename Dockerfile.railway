@@ -69,13 +69,15 @@ RUN curl -fsSL https://deb.nodesource.com/setup_20.x | bash - \
 # Copy application code
 COPY . /app
 
-# Debug: Check what files exist in the client directory
+# Debug: Check what files exist in the client directory and ensure directories exist
 RUN echo "=== Checking client directory structure ===" && \
     find /app/skyvern/client -type f -name "*.py" | head -20 && \
-    echo "=== Checking specific init files ===" && \
-    ls -la /app/skyvern/client/artifacts/__init__.py /app/skyvern/client/browser_session/__init__.py /app/skyvern/client/workflows/__init__.py 2>/dev/null || echo "Some init files missing" && \
-    echo "=== Content of artifacts init file ===" && \
-    cat /app/skyvern/client/artifacts/__init__.py 2>/dev/null || echo "artifacts init file not found"
+    echo "=== Checking if client subdirectories exist ===" && \
+    ls -la /app/skyvern/client/ && \
+    echo "=== Ensuring client subdirectories exist ===" && \
+    mkdir -p /app/skyvern/client/artifacts /app/skyvern/client/browser_session /app/skyvern/client/workflows /app/skyvern/client/agent /app/skyvern/client/credentials && \
+    echo "=== Checking specific client.py files ===" && \
+    ls -la /app/skyvern/client/artifacts/client.py /app/skyvern/client/browser_session/client.py /app/skyvern/client/workflows/client.py 2>/dev/null || echo "Some client.py files missing"
 
 # Create necessary directories
 RUN mkdir -p /tmp/videos /tmp/har /tmp/log /tmp/artifacts /app/.streamlit
