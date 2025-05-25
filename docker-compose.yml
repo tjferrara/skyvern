@@ -19,7 +19,7 @@ services:
       retries: 5
 
   skyvern:
-    image: public.ecr.aws/skyvern/skyvern:latest
+    image: public.ecr.aws/skyvern/skyvern:0.1.82
     restart: on-failure
     # comment out if you want to externally call skyvern API
     ports:
@@ -48,10 +48,10 @@ services:
       #       LLM Settings
       # =========================
       # OpenAI Support:
-      # If you want to use OpenAI as your LLM provider, uncomment the following lines and fill in your OpenAI API key.
-      # - ENABLE_OPENAI=true
-      # - LLM_KEY=OPENAI_GPT4O
-      # - OPENAI_API_KEY=<your_openai_key>
+       If you want to use OpenAI as your LLM provider, uncomment the following lines and fill in your OpenAI API key.
+       - ENABLE_OPENAI=true
+       - LLM_KEY=OPENAI_GPT4O
+      - OPENAI_API_KEY=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
       #  Gemini Support:
       # Gemini is a new LLM provider that is currently in beta. You can use it by uncommenting the following lines and filling in your Gemini API key.
       - LLM_KEY=GEMINI
@@ -129,7 +129,7 @@ services:
       retries: 5
 
   skyvern-ui:
-    image: public.ecr.aws/skyvern/skyvern-ui:latest
+    image: public.ecr.aws/skyvern/skyvern:0.1.82
     restart: on-failure
     ports:
       - 8080:8080
