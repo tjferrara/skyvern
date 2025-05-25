@@ -36,8 +36,9 @@ echo "DATABASE_URL: ${DATABASE_URL:-'NOT SET'}"
 echo "DATABASE_STRING: ${DATABASE_STRING:-'NOT SET'}"
 
 if [ -n "$DATABASE_URL" ]; then
-    export DATABASE_STRING="$DATABASE_URL"
-    echo "✓ DATABASE_STRING set from DATABASE_URL"
+    # Convert postgresql:// to postgresql+psycopg:// for SQLAlchemy to use psycopg3
+    export DATABASE_STRING="${DATABASE_URL/postgresql:\/\//postgresql+psycopg:\/\/}"
+    echo "✓ DATABASE_STRING set from DATABASE_URL (converted to use psycopg driver)"
 else
     echo "✗ DATABASE_URL not provided by Railway"
 fi
