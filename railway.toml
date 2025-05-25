@@ -1,5 +1,5 @@
-# Railway configuration for Skyvern deployment
-# Updated to trigger new deployment
+# Railway configuration for Skyvern deployment  
+# Updated to trigger deployment with DATABASE_URL linked
 
 [build]
 builder = "dockerfile"
