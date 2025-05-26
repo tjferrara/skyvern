@@ -2,7 +2,7 @@
 
 set -e
 
-echo "Starting Skyvern UI on Railway..."
+echo "Starting Skyvern React UI on Railway..."
 
 # Set default port if not provided by Railway
 export PORT=${PORT:-8080}
@@ -16,34 +16,6 @@ echo "PORT: $PORT"
 echo "API_BASE_URL: $VITE_API_BASE_URL"
 echo "WSS_BASE_URL: $VITE_WSS_BASE_URL"
 
-# Ensure required directories exist
-mkdir -p /app/.streamlit
-
-# Create or update Streamlit configuration
-cat > /app/.streamlit/config.toml << EOF
-[server]
-port = $PORT
-address = "0.0.0.0"
-headless = true
-enableCORS = false
-enableXsrfProtection = false
-
-[browser]
-gatherUsageStats = false
-EOF
-
-# Create secrets.toml for API connection
-if [ ! -f ".streamlit/secrets.toml" ]; then
-    echo "Creating Streamlit secrets configuration..."
-    cat > .streamlit/secrets.toml << EOF
-[skyvern]
-configs = [
-    {"env" = "railway", "host" = "$VITE_API_BASE_URL", "orgs" = []}
-]
-EOF
-    echo "Streamlit secrets.toml created."
-fi
-
-# Start the Streamlit UI
-echo "Starting Skyvern Streamlit UI on port $PORT..."
-exec streamlit run skyvern/forge/app.py --server.port=$PORT --server.address=0.0.0.0 
+# Start the React frontend using serve
+echo "Starting Skyvern React UI on port $PORT..."
+exec serve -s /app/dist -l $PORT 
