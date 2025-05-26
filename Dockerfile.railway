@@ -51,11 +51,11 @@ RUN apt-get update && apt-get install -y \
     fluxbox \
     && rm -rf /var/lib/apt/lists/*
 
-# Install Node.js for Bitwarden CLI (this layer will be cached)
+# Install Node.js for Bitwarden CLI and frontend build (this layer will be cached)
 ENV NODE_VERSION=20.12.2
 RUN curl -fsSL https://deb.nodesource.com/setup_20.x | bash - \
     && apt-get install -y nodejs \
-    && npm install -g @bitwarden/cli@2024.9.0
+    && npm install -g @bitwarden/cli@2024.9.0 serve
 
 # Copy requirements and install Python dependencies (this layer will be cached unless requirements change)
 COPY --from=requirements-stage /tmp/requirements.txt /app/requirements.txt
@@ -71,6 +71,18 @@ RUN mkdir -p /tmp/videos /tmp/har /tmp/log /tmp/artifacts /app/.streamlit
 
 # Copy application code (optimized layer ordering for better caching)
 COPY . /app
+
+# Build the frontend
+WORKDIR /app/skyvern-frontend
+RUN npm ci --only=production
+# Set build-time environment variables for the frontend
+ENV VITE_API_BASE_URL="/api/v1"
+ENV VITE_WSS_BASE_URL="wss://skyvern-production-5271.up.railway.app/api/v1"
+ENV VITE_ARTIFACT_API_BASE_URL="/artifact"
+RUN npm run build
+
+# Return to app directory
+WORKDIR /app
 
 # Verify client directory structure
 RUN echo "=== Checking client directory structure ===" && \

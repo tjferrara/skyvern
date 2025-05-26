@@ -68,6 +68,25 @@ if [ ! -f ".streamlit/secrets.toml" ]; then
     # Update the secrets file with Railway URL
     echo -e "[skyvern]\nconfigs = [\n    {\"env\" = \"railway\", \"host\" = \"$RAILWAY_URL/api/v1\", \"orgs\" = [{name=\"Skyvern\", cred=\"$api_token\"}]}\n]" > .streamlit/secrets.toml
     echo ".streamlit/secrets.toml file updated with organization details."
+    
+    # Export the API token for the frontend to use
+    export VITE_SKYVERN_API_KEY="$api_token"
+    echo "✓ API token exported for frontend: ${api_token:0:20}..."
+    
+    # Save the API token to a file that can be read by other processes
+    echo "$api_token" > /tmp/skyvern_api_key.txt
+    echo "✓ API token saved to /tmp/skyvern_api_key.txt"
+else
+    echo "Organization already exists, extracting API token..."
+    # Extract API token from existing secrets.toml
+    api_token=$(grep -o 'cred="[^"]*"' .streamlit/secrets.toml | sed 's/cred="//;s/"//')
+    if [ -n "$api_token" ]; then
+        export VITE_SKYVERN_API_KEY="$api_token"
+        echo "$api_token" > /tmp/skyvern_api_key.txt
+        echo "✓ Existing API token found and exported: ${api_token:0:20}..."
+    else
+        echo "✗ Could not extract API token from secrets.toml"
+    fi
 fi
 
 # Setup virtual display for headless browser operations
@@ -76,14 +95,7 @@ export DISPLAY=:99
 Xvfb :99 -screen 0 1920x1080x16 -ac -nolisten tcp &
 XVFB_PID=$!
 
-# Function to cleanup on exit
-cleanup() {
-    echo "Cleaning up..."
-    kill $XVFB_PID 2>/dev/null || true
-    exit 0
-}
-
-# Setup trap to catch signals
+# Setup trap to catch signals (cleanup function defined below)
 trap cleanup SIGTERM SIGINT
 
 # Start the streaming service in background
@@ -91,6 +103,14 @@ echo "Starting streaming service..."
 python run_streaming.py > /dev/null 2>&1 &
 STREAMING_PID=$!
 
-# Start the main Skyvern API service (not the UI)
-echo "Starting Skyvern API service on port $PORT..."
-exec python -m skyvern.forge 
+# Update cleanup function
+cleanup() {
+    echo "Cleaning up..."
+    kill $XVFB_PID 2>/dev/null || true
+    kill $STREAMING_PID 2>/dev/null || true
+    exit 0
+}
+
+# Start the main Skyvern service (API + Frontend)
+echo "Starting Skyvern service (API + Frontend) on port $PORT..."
+exec python -m skyvern.forge.__main___railway 

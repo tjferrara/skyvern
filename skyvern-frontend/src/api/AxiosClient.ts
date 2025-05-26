@@ -4,11 +4,11 @@ import axios from "axios";
 const apiV1BaseUrl = apiBaseUrl;
 const apiV2BaseUrl = apiBaseUrl.replace("v1", "v2");
 
+// Create clients without API key initially
 const client = axios.create({
   baseURL: apiV1BaseUrl,
   headers: {
     "Content-Type": "application/json",
-    "x-api-key": envCredential,
   },
 });
 
@@ -16,9 +16,40 @@ const v2Client = axios.create({
   baseURL: apiV2BaseUrl,
   headers: {
     "Content-Type": "application/json",
-    "x-api-key": envCredential,
   },
 });
+
+// Initialize API key
+let apiKeyInitialized = false;
+
+async function initializeApiKey() {
+  if (apiKeyInitialized) return;
+  
+  try {
+    // Try to fetch API key from the backend config endpoint
+    const response = await fetch('/api/config');
+    if (response.ok) {
+      const config = await response.json();
+      if (config.apiKey) {
+        setApiKeyHeader(config.apiKey);
+        console.log("API key loaded from backend config");
+        apiKeyInitialized = true;
+        return;
+      }
+    }
+  } catch (error) {
+    console.warn("Failed to fetch API key from backend config:", error);
+  }
+  
+  // Fallback to environment variable
+  if (envCredential) {
+    setApiKeyHeader(envCredential);
+    console.log("API key loaded from environment variable");
+    apiKeyInitialized = true;
+  } else {
+    console.warn("No API key available");
+  }
+}
 
 const artifactApiClient = axios.create({
   baseURL: artifactApiBaseUrl,
@@ -54,6 +85,9 @@ async function getClient(
   credentialGetter: CredentialGetter | null,
   version: string = "v1",
 ) {
+  // Ensure API key is initialized
+  await initializeApiKey();
+  
   if (credentialGetter) {
     removeApiKeyHeader();
     const credential = await credentialGetter();
@@ -68,4 +102,4 @@ async function getClient(
 
 export type CredentialGetter = () => Promise<string | null>;
 
-export { getClient, artifactApiClient };
+export { getClient, artifactApiClient, initializeApiKey };
