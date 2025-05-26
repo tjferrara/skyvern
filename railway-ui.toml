@@ -1,0 +1,18 @@
+# Railway configuration for Skyvern UI deployment
+
+[build]
+builder = "dockerfile"
+dockerfilePath = "Dockerfile.ui.railway"
+
+[deploy]
+startCommand = "/app/entrypoint-ui-railway.sh"
+restartPolicyType = "on_failure"
+restartPolicyMaxRetries = 3
+
+[environments.production]
+variables = [
+    "VITE_API_BASE_URL=https://skyvern-production-5271.up.railway.app/api/v1",
+    "VITE_WSS_BASE_URL=wss://skyvern-production-5271.up.railway.app/api/v1",
+    "PYTHONUNBUFFERED=1",
+    "PYTHONDONTWRITEBYTECODE=1"
+] 

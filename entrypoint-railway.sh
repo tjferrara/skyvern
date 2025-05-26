@@ -91,6 +91,6 @@ echo "Starting streaming service..."
 python run_streaming.py > /dev/null 2>&1 &
 STREAMING_PID=$!
 
-# Start the main Skyvern application
-echo "Starting Skyvern application on port $PORT..."
+# Start the main Skyvern API service (not the UI)
+echo "Starting Skyvern API service on port $PORT..."
 exec python -m skyvern.forge 
