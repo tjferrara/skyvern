@@ -68,6 +68,20 @@ def get_agent_app() -> FastAPI:
         allow_headers=["*"],
     )
 
+    # Add config endpoint before other routers
+    @app.get("/api/config")
+    async def get_config():
+        """Endpoint to provide frontend configuration including API key"""
+        api_key_file = Path("/tmp/skyvern_api_key.txt")
+        api_key = None
+        if api_key_file.exists():
+            api_key = api_key_file.read_text().strip()
+        
+        return {
+            "apiKey": api_key,
+            "apiBaseUrl": "/api/v1"
+        }
+
     # Include API routers
     app.include_router(base_router, prefix="/v1")
     app.include_router(legacy_base_router, prefix="/api/v1")
@@ -101,19 +115,6 @@ def get_agent_app() -> FastAPI:
         LOG.exception("Unexpected error in agent server.", exc_info=exc)
         return JSONResponse(status_code=500, content={"error": f"Unexpected error: {exc}"})
 
-    @app.get("/api/config")
-    async def get_config():
-        """Endpoint to provide frontend configuration including API key"""
-        api_key_file = Path("/tmp/skyvern_api_key.txt")
-        api_key = None
-        if api_key_file.exists():
-            api_key = api_key_file.read_text().strip()
-        
-        return {
-            "apiKey": api_key,
-            "apiBaseUrl": "/api/v1"
-        }
-
     @app.middleware("http")
     async def request_middleware(request: Request, call_next: Callable[[Request], Awaitable[Response]]) -> Response:
         curr_ctx = skyvern_context.current()
@@ -129,10 +130,34 @@ def get_agent_app() -> FastAPI:
             skyvern_context.reset()
 
     # Mount static files for the frontend (Railway-specific)
+    # Mount after all API routes to avoid conflicts
     frontend_dist_path = Path("/app/skyvern-frontend/dist")
     if frontend_dist_path.exists():
         LOG.info("Mounting frontend static files", path=str(frontend_dist_path))
-        app.mount("/", StaticFiles(directory=str(frontend_dist_path), html=True), name="frontend")
+        
+        # Create a custom static files handler that doesn't interfere with API routes
+        from fastapi.staticfiles import StaticFiles
+        from starlette.responses import FileResponse
+        
+        @app.get("/{full_path:path}")
+        async def serve_frontend(full_path: str):
+            """Serve frontend files, but only for non-API routes"""
+            # Don't serve static files for API routes
+            if full_path.startswith("api/") or full_path.startswith("v1/"):
+                from fastapi import HTTPException
+                raise HTTPException(status_code=404, detail="Not found")
+            
+            # Serve index.html for SPA routes
+            if not full_path or not "." in full_path:
+                return FileResponse(frontend_dist_path / "index.html")
+            
+            # Serve static files
+            file_path = frontend_dist_path / full_path
+            if file_path.exists() and file_path.is_file():
+                return FileResponse(file_path)
+            
+            # Fallback to index.html for SPA
+            return FileResponse(frontend_dist_path / "index.html")
     else:
         LOG.warning("Frontend dist directory not found", path=str(frontend_dist_path))
 
