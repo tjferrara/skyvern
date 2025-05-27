@@ -15,16 +15,16 @@ find /app/skyvern/client -name "*.py" | head -10
 echo "=== Testing imports ==="
 python -c "
 try:
-    import skyvern.client.artifacts
-    print('✓ skyvern.client.artifacts import successful')
+    import skyvern.client
+    print('✓ skyvern.client import successful')
 except Exception as e:
-    print(f'✗ skyvern.client.artifacts import failed: {e}')
+    print(f'✗ skyvern.client import failed: {e}')
 
 try:
-    from skyvern.client.artifacts.client import ArtifactsClient
-    print('✓ ArtifactsClient import successful')
+    from skyvern.client import Skyvern
+    print('✓ Skyvern client import successful')
 except Exception as e:
-    print(f'✗ ArtifactsClient import failed: {e}')
+    print(f'✗ Skyvern client import failed: {e}')
 "
 
 # Set default port if not provided by Railway
