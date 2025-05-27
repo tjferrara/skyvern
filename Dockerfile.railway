@@ -74,7 +74,8 @@ COPY . /app
 
 # Build the frontend
 WORKDIR /app/skyvern-frontend
-RUN npm ci --only=production
+# Install all dependencies but skip prepare script (husky)
+RUN npm ci --ignore-scripts
 # Set build-time environment variables for the frontend
 ENV VITE_API_BASE_URL="/api/v1"
 ENV VITE_WSS_BASE_URL="wss://skyvern-production-5271.up.railway.app/api/v1"
