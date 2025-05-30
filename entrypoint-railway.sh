@@ -4,6 +4,14 @@ set -e
 
 echo "Starting Skyvern on Railway..."
 
+# Debug: Check environment variables
+echo "=== Environment Variables Debug ==="
+echo "SKYVERN_STORAGE_TYPE: ${SKYVERN_STORAGE_TYPE:-'NOT SET'}"
+echo "AWS_ACCESS_KEY_ID: ${AWS_ACCESS_KEY_ID:0:10}... (truncated)"
+echo "AWS_SECRET_ACCESS_KEY: ${AWS_SECRET_ACCESS_KEY:0:10}... (truncated)"
+echo "AWS_REGION: ${AWS_REGION:-'NOT SET'}"
+echo "GENERATE_PRESIGNED_URLS: ${GENERATE_PRESIGNED_URLS:-'NOT SET'}"
+
 # Debug: Check Python path and module structure
 echo "=== Python Path Debug ==="
 echo "PYTHONPATH: $PYTHONPATH"
@@ -50,6 +58,36 @@ export BROWSER_TYPE=${BROWSER_TYPE:-chromium-headless}
 
 # Ensure required directories exist
 mkdir -p "$VIDEO_PATH" "$HAR_PATH" "$LOG_PATH" "$ARTIFACT_STORAGE_PATH" /app/.streamlit
+
+# Test AWS credentials before starting
+echo "=== Testing AWS S3 Connection ==="
+python -c "
+import asyncio
+import os
+from skyvern.forge.sdk.api.aws import AsyncAWSClient
+
+async def test_aws():
+    try:
+        client = AsyncAWSClient()
+        print(f'AWS Region: {client.region_name}')
+        print('✓ AWS client initialized successfully')
+        
+        # Test S3 bucket access
+        bucket_name = os.getenv('AWS_S3_BUCKET_ARTIFACTS', 'tjferrara-skyvern-artifacts')
+        print(f'Testing bucket: {bucket_name}')
+        
+        # Try to list bucket (this will fail if credentials are wrong)
+        try:
+            files = await client.list_files(f's3://{bucket_name}/')
+            print(f'✓ S3 bucket access successful. Found {len(files)} files.')
+        except Exception as e:
+            print(f'✗ S3 bucket access failed: {e}')
+            
+    except Exception as e:
+        print(f'✗ AWS client initialization failed: {e}')
+
+asyncio.run(test_aws())
+"
 
 # Run database migrations
 echo "Running database migrations..."
